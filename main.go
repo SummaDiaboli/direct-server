@@ -49,6 +49,7 @@ func main() {
 	// Start fiber server
 	app := fiber.New()
 	app.Use(logger.New())
+
 	r.SetupRoutes(app)
 	app.Listen(":8080")
 }
