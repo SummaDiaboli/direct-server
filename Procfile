@@ -1,1 +1,1 @@
-web: bin/direct-server
+web: direct-server
