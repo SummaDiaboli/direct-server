@@ -3,7 +3,7 @@ package service
 import (
 	"net/http"
 
-	"github.com/SummaDiaboli/nopass-go/models"
+	"github.com/SummaDiaboli/direct-server/models"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 )

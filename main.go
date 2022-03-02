@@ -4,8 +4,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/SummaDiaboli/nopass-go/models"
-	"github.com/SummaDiaboli/nopass-go/service"
+	"github.com/SummaDiaboli/direct-server/models"
+	"github.com/SummaDiaboli/direct-server/service"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/joho/godotenv"
