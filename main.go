@@ -8,13 +8,14 @@ import (
 	"github.com/SummaDiaboli/direct-server/service"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 func main() {
 	// Retreive environment variables
-	// err := godotenv.Load(".env")
+	err := godotenv.Load(".env")
 	// if err != nil {
 	// 	log.Fatal(err)
 	// }
@@ -28,6 +29,11 @@ func main() {
 	// 	SSLMode:  os.Getenv("DB_SSLMODE"),
 	// 	DBName:   os.Getenv("DB_NAME"),
 	// }
+	port := os.Getenv("PORT")
+	// fmt.Printf(port)
+	if port == "" {
+		log.Fatal("$PORT must be set")
+	}
 
 	dbURL := os.Getenv("DATABASE_URL")
 
@@ -54,5 +60,5 @@ func main() {
 	app.Use(logger.New())
 
 	r.SetupRoutes(app)
-	app.Listen(":8080")
+	app.Listen(":" + port)
 }
