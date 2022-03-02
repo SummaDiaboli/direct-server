@@ -9,7 +9,12 @@ func MigrateTables(db *gorm.DB) error {
 		return err
 	}
 
-	MigrateWebsites(db)
+	err = MigrateWebsites(db)
+	if err != nil {
+		return err
+	}
+
+	err = MigrateMagicTokens(db)
 	if err != nil {
 		return err
 	}

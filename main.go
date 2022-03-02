@@ -4,12 +4,13 @@ import (
 	"log"
 	"os"
 
-	"github.com/SummaDiaboli/nopass-go/database"
 	"github.com/SummaDiaboli/nopass-go/models"
 	"github.com/SummaDiaboli/nopass-go/service"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/joho/godotenv"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 func main() {
@@ -20,17 +21,20 @@ func main() {
 	}
 
 	// Instantiate database struct
-	config := &database.Config{
-		Host:     os.Getenv("DB_HOST"),
-		Port:     os.Getenv("DB_PORT"),
-		Password: os.Getenv("DB_PASS"),
-		User:     os.Getenv("DB_USER"),
-		SSLMode:  os.Getenv("DB_SSLMODE"),
-		DBName:   os.Getenv("DB_NAME"),
-	}
+	// config := &database.Config{
+	// 	Host:     os.Getenv("DB_HOST"),
+	// 	Port:     os.Getenv("DB_PORT"),
+	// 	Password: os.Getenv("DB_PASS"),
+	// 	User:     os.Getenv("DB_USER"),
+	// 	SSLMode:  os.Getenv("DB_SSLMODE"),
+	// 	DBName:   os.Getenv("DB_NAME"),
+	// }
+
+	dbURL := os.Getenv("DATABASE_URL")
 
 	// Create a new database connection
-	db, err := database.NewConnection(config)
+	// db, err := database.NewConnection(config)
+	db, err := gorm.Open(postgres.Open(dbURL), &gorm.Config{})
 	if err != nil {
 		log.Fatal("could not load database")
 	}
