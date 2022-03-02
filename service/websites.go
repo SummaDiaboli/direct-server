@@ -72,14 +72,14 @@ func (r *Repository) GetWebsites(context *fiber.Ctx) error {
 	err := r.DB.Find(websites).Error
 	if err != nil {
 		context.Status(http.StatusBadRequest).JSON(
-			&fiber.Map{"message": "could not fetch users"},
+			&fiber.Map{"message": "could not fetch websites"},
 		)
 		return err
 	}
 
 	// 200 response
 	context.Status(http.StatusOK).JSON(&fiber.Map{
-		"message": "users have been successfully retrieved",
+		"message": "websites have been successfully retrieved",
 		"data":    websites,
 	})
 
@@ -124,14 +124,14 @@ func (r *Repository) UpdateWebsite(context *fiber.Ctx) error {
 	err = r.DB.Model(models.Websites{}).Where("id = ?", id).Updates(websiteData).Error
 	if err != nil {
 		context.Status(http.StatusUnprocessableEntity).JSON(&fiber.Map{
-			"message": "could not update user",
+			"message": "could not update website",
 		})
 		return err
 	}
 
 	// 200 response
 	context.Status(http.StatusOK).JSON(&fiber.Map{
-		"message": "user has been successfully updated",
+		"message": "website has been successfully updated",
 	})
 
 	return nil
@@ -147,13 +147,13 @@ func (r *Repository) DeleteWebsite(context *fiber.Ctx) error {
 	// Delete row in table where website id matches parameter id
 	err := r.DB.Where("id = ?", id).Delete(&website).Error
 	if err != nil {
-		context.Status(http.StatusBadRequest).JSON(&fiber.Map{"message": "could not fetch user"})
+		context.Status(http.StatusBadRequest).JSON(&fiber.Map{"message": "could not fetch website"})
 		return err
 	}
 
 	// 200 response
 	context.Status(http.StatusOK).JSON(&fiber.Map{
-		"message": "user deleted successfully",
+		"message": "website deleted successfully",
 	})
 
 	return nil
