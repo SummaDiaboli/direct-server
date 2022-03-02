@@ -1,4 +1,4 @@
-module github.com/SummaDiaboli/nopass-go
+module github.com/SummaDiaboli/direct-server
 
 // +heroku goVersion go1.17
 go 1.17
