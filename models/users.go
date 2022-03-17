@@ -7,9 +7,10 @@ import (
 
 // The users that create accounts for the service
 type Users struct {
-	ID       uuid.UUID `gorm:"primary_key;type:uuid;default:uuid_generate_v4()" json:"id"`
-	Username string    `json:"username"`
+	ID       uuid.UUID `gorm:"primary_key;type:uuid;default:uuid_generate_v4();" json:"id"`
+	Username string    `gorm:"unique" json:"username"`
 	Email    string    `json:"email"`
+	// Website  string    `json:"website"`
 }
 
 // Create users table

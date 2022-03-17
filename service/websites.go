@@ -6,19 +6,22 @@ import (
 	"github.com/SummaDiaboli/direct-server/models"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
+	uuid "github.com/satori/go.uuid"
 )
 
 // Website struct that represents JSON request body
 type Website struct {
-	Url       string `json:"url" validate:"required,url"`
-	Name      string `json:"name" validate:"required"`
-	UserToken string `json:"user_token" validate:"required"`
-	Expires   string `json:"expires"`
+	// Url           string `json:"url" validate:"required,url"`
+	// Name  string `json:"website" validate:"required"`
+	Token string `json:"token" validate:"required"`
+	// Expires       string `json:"expires"`
+	UserId        uuid.UUID `json:"user_id" validate:"required"`
+	Authenticated bool      `json:"authenticated"`
 }
 
 // Create and add a new website
 func (r *Repository) CreateWebsite(context *fiber.Ctx) error {
-	website := Website{}
+	website := models.Websites{}
 
 	// Parse body JSON into website struct
 	err := context.BodyParser(&website)
@@ -31,10 +34,12 @@ func (r *Repository) CreateWebsite(context *fiber.Ctx) error {
 
 	// Struct for validation
 	websiteData := &Website{
-		Url:       website.Url,
-		Name:      website.Name,
-		UserToken: website.UserToken,
-		Expires:   website.Expires,
+		// Url:           website.Url,
+		// Name:  website.Name,
+		Token: website.Token,
+		// Expires:       website.Expires,
+		UserId:        website.UserId,
+		Authenticated: false,
 	}
 
 	// Verify that JSON integrity
@@ -59,6 +64,72 @@ func (r *Repository) CreateWebsite(context *fiber.Ctx) error {
 	// 200 response
 	context.Status(http.StatusOK).JSON(&fiber.Map{
 		"message": "website added successfully",
+	})
+
+	return nil
+}
+
+func (r *Repository) CreateUserWebsite(context *fiber.Ctx, token *models.AuthTokens) error {
+	website := &models.Websites{}
+
+	err := context.BodyParser(&website)
+	if err != nil {
+		// context.Status(http.StatusUnprocessableEntity).JSON(&fiber.Map{
+		// 	"message": "failed to process",
+		// })
+		return err
+	}
+
+	websiteData := &Website{
+		// Url:           website.Url,
+		// Name:  website.Name,
+		Token: token.Token,
+		// Expires:       website.Expires,
+		UserId:        token.UserId,
+		Authenticated: false,
+	}
+
+	validator := validator.New()
+	err = validator.Struct(websiteData)
+	if err != nil {
+		// context.Status(http.StatusUnprocessableEntity).JSON(&fiber.Map{
+		// 	"message": "failed to parse JSON",
+		// })
+		return err
+	}
+
+	// Create row in database
+	err = r.DB.Create(&websiteData).Error
+	if err != nil {
+		// context.Status(http.StatusBadRequest).JSON(&fiber.Map{
+		// 	"message": "could not create websie",
+		// })
+		return err
+	}
+
+	// 200 response
+	// context.Status(http.StatusCreated).JSON(&fiber.Map{
+	// 	"message": "website added successfully",
+	// 	"id":      token.UserId,
+	// })
+
+	return nil
+}
+
+func (r *Repository) VerifyUserWebsite(context *fiber.Ctx, token *AuthToken) error {
+	result := r.DB.Model(models.Websites{}).Where("token = ? AND user_id = ?", token.Token, token.UserId).Update("authenticated", "true")
+	err := result.Error
+	if err != nil {
+		context.Status(http.StatusBadRequest).JSON(&fiber.Map{
+			"message": "could not update website",
+		})
+		return err
+	}
+
+	context.Status(http.StatusOK).JSON(&fiber.Map{
+		"message": "user has been successfully created",
+		"id":      token.UserId,
+		// "email":   .Email,
 	})
 
 	return nil
@@ -104,10 +175,11 @@ func (r *Repository) UpdateWebsite(context *fiber.Ctx) error {
 
 	// Map body to struct for validation
 	websiteData := &Website{
-		Url:       website.Url,
-		Expires:   website.Expires,
-		Name:      website.Name,
-		UserToken: website.UserToken,
+		// Url:     website.Url,
+		// Expires: website.Expires,
+		// Name:   website.Name,
+		Token:  website.Token,
+		UserId: website.UserId,
 	}
 
 	// Verify website struct integrity

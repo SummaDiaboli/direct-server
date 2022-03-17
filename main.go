@@ -7,7 +7,9 @@ import (
 	"github.com/SummaDiaboli/direct-server/models"
 	"github.com/SummaDiaboli/direct-server/service"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -16,9 +18,9 @@ import (
 func main() {
 	// Retreive environment variables
 	err := godotenv.Load(".env")
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
+	if err != nil {
+		log.Println(".env missing in environment")
+	}
 
 	// Instantiate database struct
 	// config := &database.Config{
@@ -57,7 +59,10 @@ func main() {
 
 	// Start fiber server
 	app := fiber.New()
+
 	app.Use(logger.New())
+	app.Use(recover.New())
+	app.Use(cors.New())
 
 	r.SetupRoutes(app)
 	app.Listen(":" + port)

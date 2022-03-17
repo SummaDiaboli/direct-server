@@ -12,11 +12,12 @@ import (
 type User struct {
 	Username string `json:"username" validate:"required"`
 	Email    string `json:"email" validate:"required"`
+	// Website  string `json:"website" validate:"required"`
 }
 
 // Create and add a new user to the database
 func (r *Repository) CreateUser(context *fiber.Ctx) error {
-	user := User{}
+	user := models.Users{}
 
 	// Parse the JSON body of the request
 	err := context.BodyParser(&user)
@@ -31,6 +32,7 @@ func (r *Repository) CreateUser(context *fiber.Ctx) error {
 	userData := &User{
 		Username: user.Username,
 		Email:    user.Email,
+		// Website:  user.Website,
 	}
 
 	// Validate the JSON to verify integrity
@@ -43,8 +45,9 @@ func (r *Repository) CreateUser(context *fiber.Ctx) error {
 		return err
 	}
 
+	result := r.DB.Create(&user)
+	err = result.Error
 	// Create a new user in database
-	err = r.DB.Create(&user).Error
 	if err != nil {
 		context.Status(http.StatusBadRequest).JSON(&fiber.Map{
 			"message": "could not create user",
@@ -53,9 +56,14 @@ func (r *Repository) CreateUser(context *fiber.Ctx) error {
 	}
 
 	// Return 200 response
-	context.Status(http.StatusOK).JSON(&fiber.Map{
-		"message": "user has been successfully created",
+	context.Status(http.StatusCreated).JSON(&fiber.Map{
+		"message":  "user has been successfully created",
+		"id":       user.ID,
+		"email":    user.Email,
+		"username": user.Username,
 	})
+
+	r.CreateMagicToken(user.ID, user.Email, context)
 
 	return nil
 }

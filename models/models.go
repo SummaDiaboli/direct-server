@@ -14,10 +14,15 @@ func MigrateTables(db *gorm.DB) error {
 		return err
 	}
 
-	err = MigrateMagicTokens(db)
+	err = MigrateAuthTokens(db)
 	if err != nil {
 		return err
 	}
+
+	// err = MigrateQRCodes(db)
+	// if err != nil {
+	// 	return err
+	// }
 
 	return err
 }
