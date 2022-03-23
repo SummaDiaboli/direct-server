@@ -62,7 +62,9 @@ func main() {
 
 	app.Use(logger.New())
 	app.Use(recover.New())
-	app.Use(cors.New())
+	app.Use(cors.New(cors.Config{
+		AllowOrigins: "*",
+	}))
 
 	r.SetupRoutes(app)
 	app.Listen(":" + port)
