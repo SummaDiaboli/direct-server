@@ -48,7 +48,7 @@ func (r *Repository) Login(context *fiber.Ctx) error {
 			// Return the users in the JSON response
 			context.Status(http.StatusBadRequest).JSON(&fiber.Map{
 				"message": "user could not be retrieved successfully",
-				"data":    users,
+				// "data":    users,
 			})
 		}
 	}
