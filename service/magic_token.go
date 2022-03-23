@@ -30,6 +30,7 @@ func (r *Repository) CreateMagicToken(userId uuid.UUID, email string, context *f
 		return err
 	}
 
+	// log.Println("token created")
 	sendEmail(token, email)
 
 	r.CreateUserWebsite(context, tokenModel)
@@ -83,7 +84,10 @@ func (r *Repository) VerifyMagicToken(context *fiber.Ctx) error {
 	return nil
 }
 
+// TODO: Implement Resend email service
+
 func sendEmail(token, userEmail string) error {
+	// log.Println("Here")
 	err := godotenv.Load(".env")
 	if err != nil {
 		log.Println(".env missing in environment")
@@ -131,6 +135,7 @@ func sendEmail(token, userEmail string) error {
 
 	smtpClient, err := server.Connect()
 	if err != nil {
+		log.Println(err)
 		return err
 	}
 
@@ -141,7 +146,9 @@ func sendEmail(token, userEmail string) error {
 	email.SetBody(mail.TextHTML, htmlBody)
 
 	err = email.Send(smtpClient)
+	// log.Println("email sent")
 	if err != nil {
+		log.Println(err)
 		return err
 	}
 
