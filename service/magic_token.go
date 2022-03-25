@@ -40,6 +40,7 @@ func (r *Repository) CreateMagicToken(userId uuid.UUID, email string, context *f
 
 func (r *Repository) VerifyMagicToken(context *fiber.Ctx) error {
 	token := &models.AuthTokens{}
+	user := &models.Users{}
 
 	err := context.BodyParser(&token)
 	if err != nil {
@@ -63,6 +64,7 @@ func (r *Repository) VerifyMagicToken(context *fiber.Ctx) error {
 
 	result := r.DB.Model(models.AuthTokens{}).Where("user_id = ? AND token = ?", token.UserId, token.Token).Find(&token)
 	err = result.Error
+
 	if err != nil {
 		context.Status(http.StatusBadRequest).JSON(&fiber.Map{"message": "invalid token"})
 		return err
@@ -71,9 +73,18 @@ func (r *Repository) VerifyMagicToken(context *fiber.Ctx) error {
 	if result.RowsAffected > 0 {
 		r.VerifyUserWebsite(context, tokenData)
 
+		result = r.DB.Model(user).Where("id = ?", token.UserId).Find(&user)
+		err = result.Error
+		if err != nil {
+			return err
+		}
+
 		context.Status(http.StatusOK).JSON(&fiber.Map{
-			"message": "success",
-			"data":    token.ID,
+			"message":  "success",
+			"token_id": token.ID,
+			"id":       user.ID,
+			"email":    user.Email,
+			"username": user.Username,
 		})
 	} else {
 		context.Status(http.StatusUnauthorized).JSON(&fiber.Map{
