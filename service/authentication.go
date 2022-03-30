@@ -16,6 +16,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	uuid "github.com/satori/go.uuid"
+	"gorm.io/gorm/clause"
 )
 
 func (r *Repository) Login(context *fiber.Ctx) error {
@@ -84,6 +85,9 @@ func (r *Repository) generateQRCode() (*os.File, string) {
 // Generate the QR code for a random 64 byte set of characters
 func (r *Repository) CreateQRCode(context *fiber.Ctx) error {
 	id := context.Params("id")
+	url := fmt.Sprintf("%v", context.GetReqHeaders()["Referer"])
+
+	// fmt.Println(url)
 	qrImage, qrCode := r.generateQRCode()
 	defer os.Remove(qrImage.Name())
 
@@ -102,6 +106,7 @@ func (r *Repository) CreateQRCode(context *fiber.Ctx) error {
 
 	websiteData := &Website{
 		// Name:          website.Name,
+		Referer:       url,
 		Token:         qrCode,
 		UserId:        uuid.Must(uuid.FromString(id)),
 		Authenticated: false,
@@ -114,13 +119,20 @@ func (r *Repository) CreateQRCode(context *fiber.Ctx) error {
 	}
 
 	// Create row in database
-	err = r.DB.Create(&websiteData).Error
+	result = r.DB.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "user_id"}},
+		DoUpdates: clause.AssignmentColumns([]string{"token", "authenticated", "referer"}),
+	}).Create(&websiteData)
+
+	err = result.Error
 	if err != nil {
 		return err
 	}
 
 	// Return the file as a response
-	context.Status(http.StatusOK).SendFile(qrImage.Name())
+	context.Status(http.StatusOK).SendFile(qrImage.Name(), true)
+
+	// r.CheckUserVerified(context)
 
 	return nil
 }
@@ -168,6 +180,53 @@ func (r *Repository) VerifyQRCode(context *fiber.Ctx) error {
 			"message": "invalid qrCode",
 		})
 	}
+
+	return nil
+}
+
+func (r *Repository) CheckUserVerified(context *fiber.Ctx) error {
+	// fiber.AcquireAgent().Timeout(time.Second * 30)
+	qrCode := &models.AuthTokens{}
+	url := fmt.Sprintf("%v", context.GetReqHeaders()["Referer"])
+
+	id := context.Params("id")
+
+	success := false
+
+	for !success {
+		// fmt.Println(success)
+		result := r.DB.Model(models.Websites{}).Where("user_id = ? AND referer = ? AND authenticated = 'true'", id, url).Find(&qrCode)
+		err := result.Error
+		if err != nil {
+			context.Status(http.StatusBadRequest).JSON(&fiber.Map{"message": "invalid token"})
+			return err
+		}
+
+		if result.RowsAffected > 0 {
+			success = true
+			user := &models.Users{}
+
+			result = r.DB.Model(user).Where("id = ?", id).Find(&user)
+			err = result.Error
+			if err != nil {
+				context.Status(http.StatusNotFound).JSON(&fiber.Map{"message": "user not found"})
+				return err
+			}
+
+			context.Status(http.StatusOK).JSON(&fiber.Map{
+				// "message": "success",
+				"id":       user.ID,
+				"email":    user.Email,
+				"username": user.Username,
+			})
+		} else {
+			success = false
+		}
+	}
+
+	// context.Status(http.StatusGatewayTimeout).JSON(&fiber.Map{
+	// 	"message": "failed to verify user",
+	// })
 
 	return nil
 }

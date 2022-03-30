@@ -10,9 +10,10 @@ type Websites struct {
 	ID uuid.UUID `gorm:"primary_key;type:uuid;default:uuid_generate_v4()" json:"id"`
 	// Url           string    `json:"url"`
 	// Name  string `json:"website"`
-	Token string `json:"token"`
 	// Expires       string    `json:"expires"`
-	UserId        uuid.UUID `json:"user_id"`
+	Token         string    `json:"token"`
+	Referer       string    `json:"referer"`
+	UserId        uuid.UUID `gorm:"unique" json:"user_id"`
 	Authenticated bool      `json:"authenticated"`
 }
 

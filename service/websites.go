@@ -13,10 +13,11 @@ import (
 type Website struct {
 	// Url           string `json:"url" validate:"required,url"`
 	// Name  string `json:"website" validate:"required"`
-	Token string `json:"token" validate:"required"`
 	// Expires       string `json:"expires"`
+	Token         string    `json:"token" validate:"required"`
 	UserId        uuid.UUID `json:"user_id" validate:"required"`
 	Authenticated bool      `json:"authenticated"`
+	Referer       string    `json:"referer"`
 }
 
 // Create and add a new website

@@ -1,7 +1,10 @@
 package service
 
 import (
+	"time"
+
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/timeout"
 	"gorm.io/gorm"
 )
 
@@ -32,8 +35,9 @@ func (r *Repository) SetupRoutes(app *fiber.App) {
 	// Authentication API
 	api.Get("/login/:username", r.Login)
 	api.Post("/confirm-qr", r.VerifyQRCode)
+	api.Get("/verify/:id", r.CheckUserVerified)
 
 	// Util API
-	api.Get("/generate/:id", r.CreateQRCode)
+	api.Get("/generate/:id", timeout.New(r.CreateQRCode, 30*time.Second))
 	// api.Get("/", sayHi)
 }
