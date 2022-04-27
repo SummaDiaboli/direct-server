@@ -19,6 +19,11 @@ func MigrateTables(db *gorm.DB) error {
 		return err
 	}
 
+	err = MigrateAuthedWebsites(db)
+	if err != nil {
+		return err
+	}
+
 	// err = MigrateQRCodes(db)
 	// if err != nil {
 	// 	return err

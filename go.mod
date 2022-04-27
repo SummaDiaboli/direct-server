@@ -11,7 +11,12 @@ require (
 	github.com/joho/godotenv v1.4.0
 	github.com/satori/go.uuid v1.2.0
 	gorm.io/driver/postgres v1.3.1
-	gorm.io/gorm v1.23.1
+	gorm.io/gorm v1.23.2
+)
+
+require (
+	github.com/go-sql-driver/mysql v1.6.0 // indirect
+	gorm.io/driver/mysql v1.3.2 // indirect
 )
 
 require (
@@ -40,4 +45,5 @@ require (
 	golang.org/x/crypto v0.0.0-20220214200702-86341886e292 // indirect
 	golang.org/x/sys v0.0.0-20220209214540-3681064d5158 // indirect
 	golang.org/x/text v0.3.7 // indirect
+	gorm.io/datatypes v1.0.6
 )

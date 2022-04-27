@@ -39,6 +39,8 @@ func (r *Repository) Login(context *fiber.Ctx) error {
 		}
 
 		if result.RowsAffected > 0 {
+			r.CreateMagicToken(users.ID, users.Email, context)
+
 			context.Status(http.StatusOK).JSON(&fiber.Map{
 				"message":  "user retrieved successfully",
 				"id":       users.ID,
@@ -97,7 +99,10 @@ func (r *Repository) CreateQRCode(context *fiber.Ctx) error {
 		// Authenticated: false,
 	}
 
-	result := r.DB.Create(&qrData)
+	result := r.DB.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "user_id"}},
+		DoUpdates: clause.AssignmentColumns([]string{"token"}),
+	}).Create(&qrData)
 	err := result.Error
 	if err != nil {
 		// log.Fatal(err)

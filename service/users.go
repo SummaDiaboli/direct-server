@@ -2,22 +2,27 @@ package service
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/SummaDiaboli/direct-server/models"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
+	"gorm.io/datatypes"
 )
 
 // The user data sent to the server
 type User struct {
-	Username string `json:"username" validate:"required"`
-	Email    string `json:"email" validate:"required"`
+	Username string         `json:"username" validate:"required"`
+	Email    string         `json:"email" validate:"required"`
+	Created  datatypes.Date `json:"created"`
 	// Website  string `json:"website" validate:"required"`
 }
 
 // Create and add a new user to the database
 func (r *Repository) CreateUser(context *fiber.Ctx) error {
-	user := models.Users{}
+	user := models.Users{
+		Created: datatypes.Date(time.Now()),
+	}
 
 	// Parse the JSON body of the request
 	err := context.BodyParser(&user)
@@ -32,6 +37,7 @@ func (r *Repository) CreateUser(context *fiber.Ctx) error {
 	userData := &User{
 		Username: user.Username,
 		Email:    user.Email,
+		Created:  user.Created,
 		// Website:  user.Website,
 	}
 
@@ -45,7 +51,7 @@ func (r *Repository) CreateUser(context *fiber.Ctx) error {
 		return err
 	}
 
-	result := r.DB.Create(&user)
+	result := r.DB.Model(models.Users{}).Create(&user)
 	err = result.Error
 	// Create a new user in database
 	if err != nil {

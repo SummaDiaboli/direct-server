@@ -1,12 +1,16 @@
 package service
 
 import (
+	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/SummaDiaboli/direct-server/models"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	uuid "github.com/satori/go.uuid"
+	"gorm.io/datatypes"
+	"gorm.io/gorm/clause"
 )
 
 // Website struct that represents JSON request body
@@ -57,7 +61,7 @@ func (r *Repository) CreateWebsite(context *fiber.Ctx) error {
 	err = r.DB.Create(&website).Error
 	if err != nil {
 		context.Status(http.StatusBadRequest).JSON(&fiber.Map{
-			"message": "could not create websie",
+			"message": "could not create website",
 		})
 		return err
 	}
@@ -74,6 +78,9 @@ func (r *Repository) CreateUserWebsite(context *fiber.Ctx, token *models.AuthTok
 	website := &models.Websites{}
 
 	err := context.BodyParser(&website)
+	url := fmt.Sprintf("%v", context.GetReqHeaders()["Referer"])
+	// fmt.Println(context.GetReqHeaders())
+
 	if err != nil {
 		// context.Status(http.StatusUnprocessableEntity).JSON(&fiber.Map{
 		// 	"message": "failed to process",
@@ -84,7 +91,8 @@ func (r *Repository) CreateUserWebsite(context *fiber.Ctx, token *models.AuthTok
 	websiteData := &Website{
 		// Url:           website.Url,
 		// Name:  website.Name,
-		Token: token.Token,
+		Token:   token.Token,
+		Referer: url,
 		// Expires:       website.Expires,
 		UserId:        token.UserId,
 		Authenticated: false,
@@ -100,7 +108,12 @@ func (r *Repository) CreateUserWebsite(context *fiber.Ctx, token *models.AuthTok
 	}
 
 	// Create row in database
-	err = r.DB.Create(&websiteData).Error
+	// err = r.DB.Create(&websiteData).Error
+	result := r.DB.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "user_id"}},
+		DoUpdates: clause.AssignmentColumns([]string{"token", "authenticated", "referer"}),
+	}).Create(&websiteData)
+	err = result.Error
 	if err != nil {
 		// context.Status(http.StatusBadRequest).JSON(&fiber.Map{
 		// 	"message": "could not create websie",
@@ -127,8 +140,38 @@ func (r *Repository) VerifyUserWebsite(context *fiber.Ctx, token *AuthToken) err
 		return err
 	}
 
+	website := &models.Websites{}
+	result = r.DB.Model(models.Websites{}).Where("token = ? AND user_id = ?", token.Token, token.UserId).First(&website)
+	err = result.Error
+	if err != nil {
+		context.Status(http.StatusBadRequest).JSON(&fiber.Map{
+			"message": "could not find website",
+		})
+		return err
+	}
+	// fmt.Println(website)
+
+	// url := fmt.Sprintf("%v", context.GetReqHeaders()["Referer"])
+	authWebsite := &models.AuthedWebsites{
+		Token:   website.Token,
+		UserId:  website.UserId,
+		Referer: website.Referer,
+		// Expired: false,
+		Created: datatypes.Date(time.Now()),
+		Expires: datatypes.Date(time.Now().AddDate(0, 0, 7)),
+	}
+
+	result = r.DB.Model(models.AuthedWebsites{}).Create(authWebsite)
+	err = result.Error
+	if err != nil {
+		context.Status(http.StatusBadRequest).JSON(&fiber.Map{
+			"message": "could not create authed website",
+		})
+		return err
+	}
+
 	context.Status(http.StatusOK).JSON(&fiber.Map{
-		"message": "user has been successfully created",
+		"message": "user has been successfully authenticated",
 		"id":      token.UserId,
 		// "email":   .Email,
 	})
