@@ -31,9 +31,13 @@ func (r *Repository) CreateMagicToken(userId uuid.UUID, email string, context *f
 	}).Create(&tokenModel)
 	err := result.Error
 	if err != nil {
+		fmt.Println(err)
 		return err
 	}
 
+	context.Append("user_id", userId.String())
+
+	// fmt.Println("created token")
 	// log.Println("token created")
 	sendEmail(token, email)
 

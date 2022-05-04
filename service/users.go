@@ -98,13 +98,13 @@ func (r *Repository) GetUsers(context *fiber.Ctx) error {
 
 // Return user with specific ID
 func (r *Repository) GetUserById(context *fiber.Ctx) error {
-	users := &models.Users{}
+	user := &models.Users{}
 
 	// String value of the id section of the url
 	id := context.Params("id")
 
 	// Select from users where the id is the same as the one passed through the url
-	err := r.DB.Where("id =?", id).Find(&users).Error
+	err := r.DB.Where("id =?", id).Find(&user).Error
 	if err != nil {
 		context.Status(http.StatusBadRequest).JSON(&fiber.Map{"message": "could not fetch user"})
 		return err
@@ -113,7 +113,12 @@ func (r *Repository) GetUserById(context *fiber.Ctx) error {
 	// Return the users in the JSON response
 	context.Status(http.StatusOK).JSON(&fiber.Map{
 		"message": "user retrieved successfully",
-		"data":    users,
+		// "data":    user,
+		"id":            user.ID,
+		"username":      user.Username,
+		"email":         user.Email,
+		"created":       user.Created,
+		"tokenDuration": user.TokenDuration,
 	})
 
 	return nil
@@ -158,23 +163,23 @@ func (r *Repository) UpdateUser(context *fiber.Ctx) error {
 	}
 
 	// User model for validation
-	userData := &User{
-		Username: user.Username,
-		Email:    user.Email,
-	}
+	// userData := &User{
+	// 	Username: user.Username,
+	// 	Email:    user.Email,
+	// }
 
 	// Validate the JSON to verify integrity
-	validator := validator.New()
-	err = validator.Struct(userData)
-	if err != nil {
-		context.Status(http.StatusUnprocessableEntity).JSON(&fiber.Map{
-			"message": "failed to parse JSON",
-		})
-		return err
-	}
+	// validator := validator.New()
+	// err = validator.Struct(userData)
+	// if err != nil {
+	// 	context.Status(http.StatusUnprocessableEntity).JSON(&fiber.Map{
+	// 		"message": "failed to parse JSON",
+	// 	})
+	// 	return err
+	// }
 
 	// Update specific user using the Users model and the id passed in
-	err = r.DB.Model(models.Users{}).Where("id = ?", id).Updates(userData).Error
+	err = r.DB.Model(models.Users{}).Where("id = ?", id).Updates(&user).Error
 	if err != nil {
 		context.Status(http.StatusUnprocessableEntity).JSON(&fiber.Map{
 			"message": "could not update user",

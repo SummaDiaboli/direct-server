@@ -79,13 +79,17 @@ func (r *Repository) CreateUserWebsite(context *fiber.Ctx, token *models.AuthTok
 
 	err := context.BodyParser(&website)
 	url := fmt.Sprintf("%v", context.GetReqHeaders()["Referer"])
+	// fmt.Println(context.GetRespHeader("user_id"))
 	// fmt.Println(context.GetReqHeaders())
 
 	if err != nil {
 		// context.Status(http.StatusUnprocessableEntity).JSON(&fiber.Map{
 		// 	"message": "failed to process",
 		// })
-		return err
+		// fmt.Println(err)
+		// log.Println(err)
+		// return err
+		err = nil
 	}
 
 	websiteData := &Website{
@@ -97,6 +101,8 @@ func (r *Repository) CreateUserWebsite(context *fiber.Ctx, token *models.AuthTok
 		UserId:        token.UserId,
 		Authenticated: false,
 	}
+
+	// fmt.Println("here")
 
 	validator := validator.New()
 	err = validator.Struct(websiteData)
@@ -120,6 +126,8 @@ func (r *Repository) CreateUserWebsite(context *fiber.Ctx, token *models.AuthTok
 		// })
 		return err
 	}
+
+	// log.Println("success")
 
 	// 200 response
 	// context.Status(http.StatusCreated).JSON(&fiber.Map{
@@ -152,6 +160,7 @@ func (r *Repository) VerifyUserWebsite(context *fiber.Ctx, token *AuthToken) err
 	// fmt.Println(website)
 
 	// url := fmt.Sprintf("%v", context.GetReqHeaders()["Referer"])
+	fmt.Println(time.Now())
 	authWebsite := &models.AuthedWebsites{
 		Token:   website.Token,
 		UserId:  website.UserId,
