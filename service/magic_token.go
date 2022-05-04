@@ -13,6 +13,7 @@ import (
 	"github.com/joho/godotenv"
 	uuid "github.com/satori/go.uuid"
 	mail "github.com/xhit/go-simple-mail/v2"
+	"gorm.io/gorm/clause"
 )
 
 type AuthToken struct {
@@ -24,12 +25,19 @@ func (r *Repository) CreateMagicToken(userId uuid.UUID, email string, context *f
 	token := uniuri.NewLen(6)
 	tokenModel := &models.AuthTokens{UserId: userId, Token: token}
 
-	result := r.DB.Create(&tokenModel)
+	result := r.DB.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "user_id"}},
+		DoUpdates: clause.AssignmentColumns([]string{"token"}),
+	}).Create(&tokenModel)
 	err := result.Error
 	if err != nil {
+		fmt.Println(err)
 		return err
 	}
 
+	context.Append("user_id", userId.String())
+
+	// fmt.Println("created token")
 	// log.Println("token created")
 	sendEmail(token, email)
 
@@ -79,13 +87,20 @@ func (r *Repository) VerifyMagicToken(context *fiber.Ctx) error {
 			return err
 		}
 
-		context.Status(http.StatusOK).JSON(&fiber.Map{
-			"message":  "success",
-			"token_id": token.ID,
-			"id":       user.ID,
-			"email":    user.Email,
-			"username": user.Username,
-		})
+		if result.RowsAffected > 0 {
+			context.Status(http.StatusOK).JSON(&fiber.Map{
+				"message":  "user retrieved successfully",
+				"id":       user.ID,
+				"username": user.Username,
+				"email":    user.Email,
+			})
+		} else {
+			// Return the users in the JSON response
+			context.Status(http.StatusBadRequest).JSON(&fiber.Map{
+				"message": "user could not be retrieved successfully",
+				// "data":    users,
+			})
+		}
 	} else {
 		context.Status(http.StatusUnauthorized).JSON(&fiber.Map{
 			"message": "invalid token",
@@ -95,8 +110,42 @@ func (r *Repository) VerifyMagicToken(context *fiber.Ctx) error {
 	return nil
 }
 
-// TODO: Implement Resend email service
+func (r *Repository) ResendMagicToken(context *fiber.Ctx) error {
+	token := uniuri.NewLen(6)
+	user := models.Users{}
+	userId := context.Params("id")
 
+	tokenModel := &models.AuthTokens{UserId: uuid.FromStringOrNil(userId), Token: token}
+	result := r.DB.Model(models.AuthTokens{}).Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "user_id"}},
+		DoUpdates: clause.AssignmentColumns([]string{"token"}),
+	}).Create(&tokenModel)
+	err := result.Error
+	if err != nil {
+		return err
+	}
+
+	result = r.DB.Model(models.Users{}).Where("id = ?", userId).Find(&user)
+	err = result.Error
+	if err != nil {
+		return err
+	}
+
+	sendEmail(token, user.Email)
+
+	r.CreateUserWebsite(context, tokenModel)
+
+	context.Status(http.StatusCreated).JSON(&fiber.Map{
+		"message": "magic code recreated",
+		"id":      userId,
+	})
+
+	return nil
+}
+
+// TODO: Implement Resend email service
+// TODO: Resend email should fetch token from referer and user_id, then send it to email
+/* TODO: Resend email */
 func sendEmail(token, userEmail string) error {
 	// log.Println("Here")
 	err := godotenv.Load(".env")

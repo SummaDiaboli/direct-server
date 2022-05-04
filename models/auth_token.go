@@ -7,7 +7,7 @@ import (
 
 type AuthTokens struct {
 	ID     uuid.UUID `gorm:"primary_key;type:uuid;default:uuid_generate_v4()" json:"id"`
-	UserId uuid.UUID `json:"user_id"`
+	UserId uuid.UUID ` gorm:"unique" json:"user_id"`
 	Token  string    `json:"token"`
 }
 

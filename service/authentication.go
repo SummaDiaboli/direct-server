@@ -39,6 +39,9 @@ func (r *Repository) Login(context *fiber.Ctx) error {
 		}
 
 		if result.RowsAffected > 0 {
+			// fmt.Println("Found")
+			r.CreateMagicToken(users.ID, users.Email, context)
+
 			context.Status(http.StatusOK).JSON(&fiber.Map{
 				"message":  "user retrieved successfully",
 				"id":       users.ID,
@@ -97,7 +100,10 @@ func (r *Repository) CreateQRCode(context *fiber.Ctx) error {
 		// Authenticated: false,
 	}
 
-	result := r.DB.Create(&qrData)
+	result := r.DB.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "user_id"}},
+		DoUpdates: clause.AssignmentColumns([]string{"token"}),
+	}).Create(&qrData)
 	err := result.Error
 	if err != nil {
 		// log.Fatal(err)
@@ -227,6 +233,26 @@ func (r *Repository) CheckUserVerified(context *fiber.Ctx) error {
 	// context.Status(http.StatusGatewayTimeout).JSON(&fiber.Map{
 	// 	"message": "failed to verify user",
 	// })
+
+	return nil
+}
+
+func (r *Repository) GetLatestToken(context *fiber.Ctx) error {
+	token := &models.AuthTokens{}
+	id := context.Params("id")
+
+	result := r.DB.Model(models.AuthTokens{}).Where("user_id = ?", id).Find(&token)
+	err := result.Error
+	if err != nil {
+		context.Status(http.StatusBadRequest).JSON(&fiber.Map{"message": "could not fetch user token"})
+		return err
+	}
+
+	context.Status(http.StatusOK).JSON(&fiber.Map{
+		"token": token.Token,
+		// "referer": website.Referer,
+		"userId": token.UserId,
+	})
 
 	return nil
 }

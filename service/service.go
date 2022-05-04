@@ -31,11 +31,17 @@ func (r *Repository) SetupRoutes(app *fiber.App) {
 
 	// Magic Token
 	api.Post("/confirm-token", r.VerifyMagicToken)
+	api.Get("/resend-token/:id", r.ResendMagicToken)
+	api.Get("/latest-token/:id", r.GetLatestToken)
 
 	// Authentication API
 	api.Get("/login/:username", r.Login)
 	api.Post("/confirm-qr", r.VerifyQRCode)
 	api.Get("/verify/:id", r.CheckUserVerified)
+
+	// Authed Websites
+	api.Get("/authed-websites/:id", r.GetAuthedWebsites)
+	api.Get("/authed-websites/recent/:id", r.GetRecentAuthedWebsites)
 
 	// Util API
 	api.Get("/generate/:id", timeout.New(r.CreateQRCode, 30*time.Second))
